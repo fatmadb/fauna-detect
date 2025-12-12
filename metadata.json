@@ -1,0 +1,5 @@
+{
+  "name": "FaunaDetect",
+  "description": "Upload an image to identify animals with AI-powered confidence scoring.",
+  "requestFramePermissions": []
+}
