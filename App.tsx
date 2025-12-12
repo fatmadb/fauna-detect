@@ -99,7 +99,7 @@ const App: React.FC = () => {
             {analysis.status === 'error' && (
               <div className="bg-red-50 text-red-700 p-4 rounded-xl border border-red-200 flex items-start gap-3">
                 <AlertCircle className="shrink-0 mt-0.5" size={20} />
-                <p className="text-sm">{analysis.error}</p>
+                <p className="text-sm whitespace-pre-wrap text-left font-medium">{analysis.error}</p>
               </div>
             )}
           </div>

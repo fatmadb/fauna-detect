@@ -1,19 +1,51 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { IdentificationResult } from "../types";
 
-const apiKey = process.env.API_KEY || '';
-const ai = new GoogleGenAI({ apiKey });
+// Helper to safely access environment variables
+const getApiKey = (): string => {
+  // Priority 1: User provided key (Hardcoded for immediate fix)
+  const hardcodedKey = 'AIzaSyCSk9cHrJJpCtUXvuacs_8x_GJiXHdQ6F0';
+  if (hardcodedKey) return hardcodedKey;
+
+  // 1. Try Vite (Standard for Vercel + Vite)
+  // @ts-ignore
+  if (typeof import.meta !== 'undefined' && import.meta.env) {
+    // @ts-ignore
+    if (import.meta.env.VITE_API_KEY) return import.meta.env.VITE_API_KEY;
+  }
+  
+  // 2. Try process.env (Next.js, CRA, Standard Node)
+  if (typeof process !== 'undefined' && process.env) {
+    if (process.env.NEXT_PUBLIC_API_KEY) return process.env.NEXT_PUBLIC_API_KEY;
+    if (process.env.REACT_APP_API_KEY) return process.env.REACT_APP_API_KEY;
+    // Fallback for some setups
+    if (process.env.VITE_API_KEY) return process.env.VITE_API_KEY;
+    if (process.env.API_KEY) return process.env.API_KEY;
+  }
+
+  return '';
+};
 
 export const identifyAnimal = async (
   base64Image: string
 ): Promise<IdentificationResult> => {
+  // Get key at runtime to handle lazy loading of env vars
+  const apiKey = getApiKey();
+
   if (!apiKey) {
-    throw new Error("API Key is missing.");
+    throw new Error(
+      "API Key is missing.\n\n" +
+      "Troubleshooting:\n" +
+      "1. On Vercel, ensure the variable name is 'VITE_API_KEY'.\n" +
+      "2. Ensure you have REDEPLOYED the app after adding the key.\n" +
+      "3. If running locally, check your .env file."
+    );
   }
 
+  // Initialize client with the key
+  const ai = new GoogleGenAI({ apiKey });
   const model = "gemini-2.5-flash";
 
-  // Define schema for structured JSON output
   const responseSchema = {
     type: Type.OBJECT,
     properties: {
@@ -63,8 +95,11 @@ export const identifyAnimal = async (
     const result = JSON.parse(text) as IdentificationResult;
     return result;
 
-  } catch (error) {
+  } catch (error: any) {
     console.error("Gemini Classification Error:", error);
-    throw new Error("Failed to identify the animal. Please ensure the image is clear.");
+    if (error.message.includes("API Key is missing")) {
+      throw error;
+    }
+    throw new Error("Failed to identify the animal. Please ensure the image is clear and the API key is properly configured.");
   }
 };
